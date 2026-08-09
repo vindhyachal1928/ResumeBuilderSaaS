@@ -1,5 +1,6 @@
 import Navbar from "../components/Navbar";
 import FeatureCard from "../components/FeatureCard";
+import Footer from "../components/Footer";
 
 import {
   Sparkles,
@@ -8,6 +9,7 @@ import {
   Eye,
   BarChart3,
 } from "lucide-react";
+
 
 function Home() {
   return (
@@ -18,7 +20,7 @@ function Home() {
       <section className="flex min-h-screen items-center justify-center">
         <div className="text-center">
 
-          <h1 className="text-5xl font-bold">
+          <h1 className="text-4xl font-bold md:text-5xl">
             AI Resume Builder
           </h1>
 
@@ -26,7 +28,7 @@ function Home() {
             Build professional resumes using AI in minutes.
           </p>
 
-          <div className="mt-6 flex justify-center gap-4">
+          <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row">
 
             <button className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700">
               Get Started
@@ -95,6 +97,8 @@ function Home() {
         </div>
 
       </section>
+
+      <Footer />
     </>
   );
 }
