@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function Navbar(){
     return(
         <nav className="flex justify-between items-center px-8 py-5 bg-white shadow-md">
@@ -12,12 +14,19 @@ function Navbar(){
                 <li>Contact</li>
             </ul>
             <div className="flex gap-4">
-                <button className="px-4 py-3">
+                <Link
+                    to="/login"
+                    className="px-4 py-2 hover:bg-white-800"
+                >
                     Login
-                </button>
-                <button className="rounded-lg bg-green-600 px-5 py-2 text-white hover:bg-green-700">
-                    Sign Up
-                </button>
+                </Link>
+                <Link
+                    to="/Signup"
+                    className="px-4 py-2"
+                    className="rounded-lg bg-green-600 px-5 py-2 text-white hover:bg-green-700"
+                >
+                    Signup
+                </Link>
             </div>
         </nav>
     );
