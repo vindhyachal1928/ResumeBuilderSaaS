@@ -1,18 +1,17 @@
 const express = require("express");
+const connectDB = require("./config/db");
+
 const healthRoutes = require("./routes/health.routes");
-const messageRoutes = require("./routes/message.routes");
+
 const app = express();
-
 const PORT = 5000;
-
+connectDB();
 
 app.use("/api/health", healthRoutes);
-app.use("/api/message", messageRoutes);
 
 app.get("/", (req,res) => {
     res.send("Backend is Running.")
 });
-
 
 
 app.listen(PORT, () => {
