@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-
 function Dashboard() {
   const navigate = useNavigate();
 
@@ -9,7 +8,7 @@ function Dashboard() {
   };
 
   const handleCreateResume = () => {
-    alert("Resume creation will be added soon!");
+  navigate("/create-resume");
   };
 
   return (

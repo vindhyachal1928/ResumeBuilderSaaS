@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import CreateResume from "./pages/CreateResume";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/Signup" element={<Signup/>}/>
 
         <Route path="/dashboard" element={ <ProtectedRoute> <Dashboard /> </ProtectedRoute> } />
+        <Route path="/create-resume" element={ <ProtectedRoute> <CreateResume /> </ProtectedRoute> } />
 
       </Routes>
 
