@@ -1,5 +1,6 @@
 const Resume = require("../models/Resume");
 
+// Create Resume
 const createResume = async (req, res) => {
   try {
     const {
@@ -50,6 +51,32 @@ const createResume = async (req, res) => {
   }
 };
 
+
+// Get User's Resumes
+const getResumes = async (req, res) => {
+  try {
+    const resumes = await Resume.find({
+      userId: req.user.userId,
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      resumes,
+    });
+
+  } catch (error) {
+    console.error("Get resumes error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+
+// Export Controllers
 module.exports = {
   createResume,
+  getResumes,
 };

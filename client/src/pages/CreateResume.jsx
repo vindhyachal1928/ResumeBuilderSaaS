@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function CreateResume() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -13,6 +16,7 @@ function CreateResume() {
     projects: "",
   });
 
+  // Handle input changes
   const handleChange = (event) => {
     setFormData({
       ...formData,
@@ -20,48 +24,60 @@ function CreateResume() {
     });
   };
 
+  // Save Resume
   const handleSubmit = async (event) => {
-  event.preventDefault();
+    event.preventDefault();
 
-  try {
-    const token = localStorage.getItem("token");
+    try {
+      const token = localStorage.getItem("token");
 
-    const response = await fetch(
-      "http://localhost:5000/api/resumes",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-
-        body: JSON.stringify(formData),
+      // Check login
+      if (!token) {
+        alert("Please login first");
+        navigate("/login");
+        return;
       }
-    );
 
-    const data = await response.json();
+      const response = await fetch(
+        "http://localhost:5000/api/resumes",
+        {
+          method: "POST",
 
-    console.log(data);
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
 
-    if (!response.ok) {
-      alert(data.message);
-      return;
+          body: JSON.stringify(formData),
+        }
+      );
+
+      const data = await response.json();
+
+      console.log("Create Resume Response:", data);
+
+      if (!response.ok) {
+        alert(data.message);
+        return;
+      }
+
+      alert("Resume created successfully!");
+
+      // Go back to Dashboard
+      navigate("/dashboard");
+
+    } catch (error) {
+      console.error("Create resume error:", error);
+      alert("Unable to connect to server");
     }
-
-    alert("Resume created successfully!");
-
-  } catch (error) {
-    console.error("Create resume error:", error);
-    alert("Unable to connect to server");
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-10">
 
       <div className="mx-auto max-w-4xl">
 
+        {/* Heading */}
         <h1 className="text-3xl font-bold text-gray-800">
           Create Your Resume
         </h1>
@@ -84,6 +100,7 @@ function CreateResume() {
 
             <div className="mt-5 grid gap-5 md:grid-cols-2">
 
+              {/* Full Name */}
               <div>
                 <label className="mb-2 block font-medium">
                   Full Name
@@ -95,10 +112,12 @@ function CreateResume() {
                   value={formData.fullName}
                   onChange={handleChange}
                   placeholder="Enter your full name"
+                  required
                   className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
                 />
               </div>
 
+              {/* Email */}
               <div>
                 <label className="mb-2 block font-medium">
                   Email
@@ -110,10 +129,12 @@ function CreateResume() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Enter your email"
+                  required
                   className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
                 />
               </div>
 
+              {/* Phone */}
               <div>
                 <label className="mb-2 block font-medium">
                   Phone
@@ -129,6 +150,7 @@ function CreateResume() {
                 />
               </div>
 
+              {/* Location */}
               <div>
                 <label className="mb-2 block font-medium">
                   Location
@@ -146,6 +168,7 @@ function CreateResume() {
 
             </div>
           </section>
+
 
           {/* Professional Summary */}
           <section className="rounded-xl bg-white p-6 shadow-sm">
@@ -165,6 +188,7 @@ function CreateResume() {
 
           </section>
 
+
           {/* Education */}
           <section className="rounded-xl bg-white p-6 shadow-sm">
 
@@ -182,6 +206,7 @@ function CreateResume() {
             />
 
           </section>
+
 
           {/* Skills */}
           <section className="rounded-xl bg-white p-6 shadow-sm">
@@ -201,6 +226,7 @@ function CreateResume() {
 
           </section>
 
+
           {/* Experience */}
           <section className="rounded-xl bg-white p-6 shadow-sm">
 
@@ -219,6 +245,7 @@ function CreateResume() {
 
           </section>
 
+
           {/* Projects */}
           <section className="rounded-xl bg-white p-6 shadow-sm">
 
@@ -236,6 +263,7 @@ function CreateResume() {
             />
 
           </section>
+
 
           {/* Submit */}
           <button
