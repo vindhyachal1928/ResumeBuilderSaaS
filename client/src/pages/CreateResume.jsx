@@ -20,13 +20,42 @@ function CreateResume() {
     });
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    console.log("Resume Data:", formData);
+  try {
+    const token = localStorage.getItem("token");
 
-    alert("Resume information saved!");
-  };
+    const response = await fetch(
+      "http://localhost:5000/api/resumes",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+
+        body: JSON.stringify(formData),
+      }
+    );
+
+    const data = await response.json();
+
+    console.log(data);
+
+    if (!response.ok) {
+      alert(data.message);
+      return;
+    }
+
+    alert("Resume created successfully!");
+
+  } catch (error) {
+    console.error("Create resume error:", error);
+    alert("Unable to connect to server");
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-10">

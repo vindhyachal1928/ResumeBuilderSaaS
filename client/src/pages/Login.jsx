@@ -1,23 +1,23 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+
 function Login() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
   const [showPassword, setShowPassword] = useState(false);
+
   // Handle input changes
   const handleChange = (event) => {
     setFormData({
       ...formData,
       [event.target.name]: event.target.value,
     });
-  };
-
-  // Logout
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    alert("Logged out successfully");
   };
 
   // Login
@@ -40,8 +40,9 @@ function Login() {
 
       const data = await response.json();
 
-      console.log(data);
+      console.log("Login response:", data);
 
+      // Login failed
       if (!response.ok) {
         alert(data.message);
         return;
@@ -50,9 +51,10 @@ function Login() {
       // Save JWT token
       localStorage.setItem("token", data.token);
 
-      alert("Login successful!");
-
       console.log("JWT:", data.token);
+
+      // Redirect to Dashboard
+      navigate("/dashboard");
 
     } catch (error) {
       console.error("Login error:", error);
@@ -65,25 +67,13 @@ function Login() {
 
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-md">
 
-        {/* Heading + Logout */}
-        <div className="flex items-center justify-between">
-
-          <h1 className="text-3xl font-bold">
-            Welcome Back
-          </h1>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
-          >
-            Logout
-          </button>
-
-        </div>
+        {/* Heading */}
+        <h1 className="text-center text-3xl font-bold">
+          Welcome Back
+        </h1>
 
         {/* Subtitle */}
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 text-center text-gray-600">
           Login to your ResumeAI account
         </p>
 
@@ -105,36 +95,46 @@ function Login() {
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
+              required
               className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
             />
           </div>
 
           {/* Password */}
           <div className="mt-5">
-          <label className="mb-2 block font-medium">
-            Password
-          </label>
 
-          <div className="relative">
-          <input
-            type={showPassword ? "text" : "password"}
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Enter your password"
-            className="w-full rounded-lg border px-4 py-3 pr-12 outline-none focus:border-blue-600"
-          />
+            <label className="mb-2 block font-medium">
+              Password
+            </label>
 
-          <button
-          type="button"
-          onMouseEnter={() => setShowPassword(true)}
-          onMouseLeave={() => setShowPassword(false)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-          >
-          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-          </button>
-        </div>
-        </div>
+            <div className="relative">
+
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                required
+                className="w-full rounded-lg border px-4 py-3 pr-12 outline-none focus:border-blue-600"
+              />
+
+              {/* Eye Button */}
+              <button
+                type="button"
+                onMouseEnter={() => setShowPassword(true)}
+                onMouseLeave={() => setShowPassword(false)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? (
+                  <EyeOff size={20} />
+                ) : (
+                  <Eye size={20} />
+                )}
+              </button>
+
+            </div>
+          </div>
 
           {/* Login Button */}
           <button

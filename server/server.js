@@ -8,6 +8,7 @@ const connectDB = require("./config/db");
 
 const healthRoutes = require("./routes/health.routes");
 const authRoutes = require("./routes/auth.routes");
+const resumeRoutes = require("./routes/resume.routes");
 
 const app = express();
 app.use("/api/user", userRoutes);
@@ -20,6 +21,8 @@ app.use(express.json());
 
 app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/resumes", resumeRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("Resume Builder Backend is Running!");
