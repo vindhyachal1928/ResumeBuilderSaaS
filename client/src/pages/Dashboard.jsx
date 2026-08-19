@@ -318,7 +318,8 @@ function Dashboard() {
 
                   {/* Buttons */}
                   <div className="mt-6 flex gap-3 border-t pt-5">
-
+                    
+                    
                     <button onClick={() => {
                       navigate(`/edit-resume/${resume._id}`);
                     }}
@@ -332,7 +333,12 @@ function Dashboard() {
                     >
                       Delete
                     </button> 
-
+                    
+                    <button onClick={() => { navigate(`/resume/${resume._id}`); }}
+                        className="flex-1 rounded-lg bg-gray-800 px-4 py-2 font-semibold text-white hover:bg-gray-900"
+                    >
+                      View
+                    </button>
                   </div>
 
                 </div>

@@ -7,6 +7,7 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import CreateResume from "./pages/CreateResume";
+import ResumePreview from "./pages/ResumePreview";
 
 function App() {
   return (
@@ -24,8 +25,11 @@ function App() {
 
         <Route path="/create-resume" element={ <ProtectedRoute> <CreateResume /> </ProtectedRoute> } />
 
-        <Route path="/edit-resume/:id" element={ <ProtectedRoute>  <CreateResume />  </ProtectedRoute> } />
+        <Route path="/edit-resume/:id" element={ <ProtectedRoute>  <CreateResume />  </ProtectedRoute> } />       
+        
+        <Route path="/resume/:id" element={ <ProtectedRoute> <ResumePreview /> </ProtectedRoute> } />
 
+        
       </Routes>
 
     </BrowserRouter>

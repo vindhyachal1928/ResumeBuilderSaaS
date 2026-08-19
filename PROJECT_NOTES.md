@@ -143,3 +143,12 @@ MongoDB
 Resume deleted
    ↓
 Dashboard updates
+
+## Day 23 — Professional Resume Preview
+Dashboard
+   ↓
+My Resumes
+   ↓
+View Resume
+   ↓
+Professional Resume Preview
