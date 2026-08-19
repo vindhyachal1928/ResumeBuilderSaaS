@@ -273,10 +273,9 @@ function Dashboard() {
                   {/* Buttons */}
                   <div className="mt-6 flex gap-3 border-t pt-5">
 
-                    <button
-                      onClick={() => {
-                        alert("Edit feature coming soon!");
-                      }}
+                    <button onClick={() => {
+                      navigate(`/edit-resume/${resume._id}`);
+                    }}
                       className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
                     >
                       Edit

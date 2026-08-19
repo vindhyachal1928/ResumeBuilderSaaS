@@ -74,9 +74,72 @@ const getResumes = async (req, res) => {
   }
 };
 
+// Update Resume
+const updateResume = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      fullName,
+      email,
+      phone,
+      location,
+      summary,
+      education,
+      skills,
+      experience,
+      projects,
+    } = req.body;
+
+    const resume = await Resume.findOneAndUpdate(
+      {
+        _id: id,
+        userId: req.user.userId,
+      },
+      {
+        fullName,
+        email,
+        phone,
+        location,
+        summary,
+        education,
+        skills,
+        experience,
+        projects,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!resume) {
+      return res.status(404).json({
+        success: false,
+        message: "Resume not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Resume updated successfully",
+      resume,
+    });
+
+  } catch (error) {
+    console.error("Update resume error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 
 // Export Controllers
 module.exports = {
   createResume,
   getResumes,
+  updateResume,
 };

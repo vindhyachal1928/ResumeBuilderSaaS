@@ -1,8 +1,14 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 
 function CreateResume() {
   const navigate = useNavigate();
+
+  // Get resume ID from URL
+  const { id } = useParams();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -16,7 +22,86 @@ function CreateResume() {
     projects: "",
   });
 
+  const [loading, setLoading] = useState(false);
+
+
+  // ==========================================
+  // Load existing resume when editing
+  // ==========================================
+
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
+
+    const fetchResume = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+
+        const response = await fetch(
+          "http://localhost:5000/api/resumes",
+          {
+            method: "GET",
+
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        console.log("Resume data:", data);
+
+        if (!response.ok) {
+          alert(data.message);
+          return;
+        }
+
+        // Find the resume we want to edit
+        const resume = data.resumes.find(
+          (item) => item._id === id
+        );
+
+        if (!resume) {
+          alert("Resume not found");
+          navigate("/dashboard");
+          return;
+        }
+
+        // Put existing resume data into form
+        setFormData({
+          fullName: resume.fullName || "",
+          email: resume.email || "",
+          phone: resume.phone || "",
+          location: resume.location || "",
+          summary: resume.summary || "",
+          skills: resume.skills || "",
+          experience: resume.experience || "",
+          education: resume.education || "",
+          projects: resume.projects || "",
+        });
+
+      } catch (error) {
+        console.error("Fetch resume error:", error);
+        alert("Unable to load resume");
+      }
+    };
+
+    fetchResume();
+
+  }, [id, navigate]);
+
+
+  // ==========================================
   // Handle input changes
+  // ==========================================
+
   const handleChange = (event) => {
     setFormData({
       ...formData,
@@ -24,7 +109,11 @@ function CreateResume() {
     });
   };
 
-  // Save Resume
+
+  // ==========================================
+  // Create / Update Resume
+  // ==========================================
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -38,39 +127,53 @@ function CreateResume() {
         return;
       }
 
-      const response = await fetch(
-        "http://localhost:5000/api/resumes",
-        {
-          method: "POST",
+      setLoading(true);
 
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+      // Create or Update
+      const url = id
+        ? `http://localhost:5000/api/resumes/${id}`
+        : "http://localhost:5000/api/resumes";
 
-          body: JSON.stringify(formData),
-        }
-      );
+      const method = id ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method: method,
+
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+
+        body: JSON.stringify(formData),
+      });
 
       const data = await response.json();
 
-      console.log("Create Resume Response:", data);
+      console.log("Resume response:", data);
 
       if (!response.ok) {
         alert(data.message);
         return;
       }
 
-      alert("Resume created successfully!");
+      if (id) {
+        alert("Resume updated successfully!");
+      } else {
+        alert("Resume created successfully!");
+      }
 
       // Go back to Dashboard
       navigate("/dashboard");
 
     } catch (error) {
-      console.error("Create resume error:", error);
+      console.error("Resume error:", error);
       alert("Unable to connect to server");
+
+    } finally {
+      setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-10">
@@ -79,19 +182,26 @@ function CreateResume() {
 
         {/* Heading */}
         <h1 className="text-3xl font-bold text-gray-800">
-          Create Your Resume
+          {id ? "Edit Your Resume" : "Create Your Resume"}
         </h1>
 
         <p className="mt-2 text-gray-600">
-          Enter your information to create your professional resume.
+          {id
+            ? "Update your resume information."
+            : "Enter your information to create your professional resume."
+          }
         </p>
+
 
         <form
           onSubmit={handleSubmit}
           className="mt-8 space-y-8"
         >
 
-          {/* Personal Information */}
+          {/* ==================================
+              Personal Information
+          ================================== */}
+
           <section className="rounded-xl bg-white p-6 shadow-sm">
 
             <h2 className="text-xl font-bold">
@@ -102,6 +212,7 @@ function CreateResume() {
 
               {/* Full Name */}
               <div>
+
                 <label className="mb-2 block font-medium">
                   Full Name
                 </label>
@@ -115,10 +226,13 @@ function CreateResume() {
                   required
                   className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
                 />
+
               </div>
+
 
               {/* Email */}
               <div>
+
                 <label className="mb-2 block font-medium">
                   Email
                 </label>
@@ -132,10 +246,13 @@ function CreateResume() {
                   required
                   className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
                 />
+
               </div>
+
 
               {/* Phone */}
               <div>
+
                 <label className="mb-2 block font-medium">
                   Phone
                 </label>
@@ -148,10 +265,13 @@ function CreateResume() {
                   placeholder="Enter your phone number"
                   className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
                 />
+
               </div>
+
 
               {/* Location */}
               <div>
+
                 <label className="mb-2 block font-medium">
                   Location
                 </label>
@@ -164,13 +284,18 @@ function CreateResume() {
                   placeholder="City, Country"
                   className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
                 />
+
               </div>
 
             </div>
+
           </section>
 
 
-          {/* Professional Summary */}
+          {/* ==================================
+              Professional Summary
+          ================================== */}
+
           <section className="rounded-xl bg-white p-6 shadow-sm">
 
             <h2 className="text-xl font-bold">
@@ -189,7 +314,10 @@ function CreateResume() {
           </section>
 
 
-          {/* Education */}
+          {/* ==================================
+              Education
+          ================================== */}
+
           <section className="rounded-xl bg-white p-6 shadow-sm">
 
             <h2 className="text-xl font-bold">
@@ -208,7 +336,10 @@ function CreateResume() {
           </section>
 
 
-          {/* Skills */}
+          {/* ==================================
+              Skills
+          ================================== */}
+
           <section className="rounded-xl bg-white p-6 shadow-sm">
 
             <h2 className="text-xl font-bold">
@@ -227,7 +358,10 @@ function CreateResume() {
           </section>
 
 
-          {/* Experience */}
+          {/* ==================================
+              Experience
+          ================================== */}
+
           <section className="rounded-xl bg-white p-6 shadow-sm">
 
             <h2 className="text-xl font-bold">
@@ -246,7 +380,10 @@ function CreateResume() {
           </section>
 
 
-          {/* Projects */}
+          {/* ==================================
+              Projects
+          ================================== */}
+
           <section className="rounded-xl bg-white p-6 shadow-sm">
 
             <h2 className="text-xl font-bold">
@@ -265,12 +402,21 @@ function CreateResume() {
           </section>
 
 
-          {/* Submit */}
+          {/* ==================================
+              Submit
+          ================================== */}
+
           <button
             type="submit"
-            className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700"
+            disabled={loading}
+            className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save Resume
+            {loading
+              ? "Saving..."
+              : id
+                ? "Update Resume"
+                : "Save Resume"
+            }
           </button>
 
         </form>
