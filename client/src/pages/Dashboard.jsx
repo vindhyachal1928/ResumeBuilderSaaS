@@ -5,6 +5,7 @@ function Dashboard() {
   const navigate = useNavigate();
 
   const [resumes, setResumes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Fetch resumes from backend
   useEffect(() => {
@@ -41,6 +42,8 @@ function Dashboard() {
 
       } catch (error) {
         console.error("Fetch resumes error:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -131,15 +134,17 @@ function Dashboard() {
           </div>
 
 
-          {/* Resumes Created */}
+          {/* Latest Resume */}
           <div className="rounded-xl bg-white p-6 shadow-sm">
 
             <p className="text-sm text-gray-500">
-              Resumes Created
+              Latest Resume
             </p>
 
-            <h3 className="mt-2 text-3xl font-bold">
-              {resumes.length}
+            <h3 className="mt-2 truncate text-xl font-bold">
+              {resumes.length > 0
+                ? resumes[0].fullName
+                : "None"}
             </h3>
 
           </div>
@@ -169,9 +174,20 @@ function Dashboard() {
           </h2>
 
 
-          {resumes.length === 0 ? (
+          {loading ? (
 
-            /* No Resumes */
+            // Loading
+            <div className="mt-5 rounded-xl bg-white p-10 text-center shadow-sm">
+
+              <p className="text-gray-500">
+                Loading your resumes...
+              </p>
+
+            </div>
+
+          ) : resumes.length === 0 ? (
+
+            // No Resumes
             <div className="mt-5 rounded-xl bg-white p-10 text-center shadow-sm">
 
               <div className="text-5xl">
@@ -197,60 +213,80 @@ function Dashboard() {
 
           ) : (
 
-            /* Resumes */
+            // Resumes
             <div className="mt-5 grid gap-6 md:grid-cols-2">
 
               {resumes.map((resume) => (
 
                 <div
                   key={resume._id}
-                  className="rounded-xl bg-white p-6 shadow-sm"
+                  className="rounded-xl bg-white p-6 shadow-sm transition hover:shadow-md"
                 >
 
-                  <h3 className="text-xl font-bold text-gray-800">
-                    {resume.fullName}
-                  </h3>
+                  {/* Resume Header */}
+                  <div className="flex items-start justify-between">
 
-                  <p className="mt-2 text-gray-600">
-                    {resume.email}
-                  </p>
+                    <div>
 
-                  {resume.phone && (
-                    <p className="mt-1 text-gray-500">
-                      {resume.phone}
+                      <h3 className="text-xl font-bold text-gray-800">
+                        {resume.fullName}
+                      </h3>
+
+                      <p className="mt-1 text-gray-500">
+                        {resume.email}
+                      </p>
+
+                    </div>
+
+                    <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+                      Resume
+                    </span>
+
+                  </div>
+
+
+                  {/* Resume Information */}
+                  <div className="mt-5 space-y-2 text-sm text-gray-600">
+
+                    {resume.phone && (
+                      <p>
+                        📞 {resume.phone}
+                      </p>
+                    )}
+
+                    {resume.location && (
+                      <p>
+                        📍 {resume.location}
+                      </p>
+                    )}
+
+                    <p>
+                      📅 Created:{" "}
+                      {new Date(
+                        resume.createdAt
+                      ).toLocaleDateString()}
                     </p>
-                  )}
 
-                  {resume.location && (
-                    <p className="mt-1 text-gray-500">
-                      {resume.location}
-                    </p>
-                  )}
-
-                  <p className="mt-3 text-sm text-gray-400">
-                    Created:{" "}
-                    {new Date(resume.createdAt).toLocaleDateString()}
-                  </p>
+                  </div>
 
 
                   {/* Buttons */}
-                  <div className="mt-5 flex gap-3">
+                  <div className="mt-6 flex gap-3 border-t pt-5">
 
                     <button
                       onClick={() => {
                         alert("Edit feature coming soon!");
                       }}
-                      className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+                      className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
                     >
                       Edit
                     </button>
-
 
                     <button
                       onClick={() => {
                         alert("Delete feature coming soon!");
                       }}
-                      className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
+                      className="flex-1 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
                     >
                       Delete
                     </button>
