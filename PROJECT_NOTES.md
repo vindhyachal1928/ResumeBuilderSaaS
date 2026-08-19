@@ -111,5 +111,35 @@ Dashboard
 - Display resume cards
 - Total resume count
 - Latest resume
-- Edit button
-- Delete button
+## Edit button
+Dashboard
+   ↓
+My Resumes
+   ↓
+Edit
+   ↓
+CreateResume form
+   ↓
+Update existing resume
+   ↓
+MongoDB
+   ↓
+Dashboard
+
+
+## Delete button
+Dashboard
+   ↓
+Delete
+   ↓
+DELETE /api/resumes/:id
+   ↓
+JWT authentication
+   ↓
+Check resume belongs to user
+   ↓
+MongoDB
+   ↓
+Resume deleted
+   ↓
+Dashboard updates

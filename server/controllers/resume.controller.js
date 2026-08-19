@@ -1,6 +1,8 @@
 const Resume = require("../models/Resume");
 
+// ==========================================
 // Create Resume
+// ==========================================
 const createResume = async (req, res) => {
   try {
     const {
@@ -15,6 +17,7 @@ const createResume = async (req, res) => {
       projects,
     } = req.body;
 
+    // Validate required fields
     if (!fullName || !email) {
       return res.status(400).json({
         success: false,
@@ -22,6 +25,7 @@ const createResume = async (req, res) => {
       });
     }
 
+    // Create resume
     const resume = await Resume.create({
       userId: req.user.userId,
       fullName,
@@ -52,7 +56,9 @@ const createResume = async (req, res) => {
 };
 
 
+// ==========================================
 // Get User's Resumes
+// ==========================================
 const getResumes = async (req, res) => {
   try {
     const resumes = await Resume.find({
@@ -74,7 +80,10 @@ const getResumes = async (req, res) => {
   }
 };
 
+
+// ==========================================
 // Update Resume
+// ==========================================
 const updateResume = async (req, res) => {
   try {
     const { id } = req.params;
@@ -113,6 +122,7 @@ const updateResume = async (req, res) => {
       }
     );
 
+    // Resume not found
     if (!resume) {
       return res.status(404).json({
         success: false,
@@ -137,9 +147,48 @@ const updateResume = async (req, res) => {
 };
 
 
+// ==========================================
+// Delete Resume
+// ==========================================
+const deleteResume = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const resume = await Resume.findOneAndDelete({
+      _id: id,
+      userId: req.user.userId,
+    });
+
+    // Resume not found
+    if (!resume) {
+      return res.status(404).json({
+        success: false,
+        message: "Resume not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Resume deleted successfully",
+    });
+
+  } catch (error) {
+    console.error("Delete resume error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+
+// ==========================================
 // Export Controllers
+// ==========================================
 module.exports = {
   createResume,
   getResumes,
   updateResume,
+  deleteResume,
 };

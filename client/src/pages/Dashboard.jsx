@@ -63,6 +63,52 @@ function Dashboard() {
     navigate("/create-resume");
   };
 
+  const handleDeleteResume = async (id) => {
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this resume?"
+  );
+
+  if (!confirmDelete) {
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `http://localhost:5000/api/resumes/${id}`,
+      {
+        method: "DELETE",
+
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    console.log("Delete response:", data);
+
+    if (!response.ok) {
+      alert(data.message);
+      return;
+    }
+
+    // Remove deleted resume from UI
+    setResumes((currentResumes) =>
+      currentResumes.filter(
+        (resume) => resume._id !== id
+      )
+    );
+
+    alert("Resume deleted successfully!");
+
+  } catch (error) {
+    console.error("Delete resume error:", error);
+    alert("Unable to connect to server");
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -281,14 +327,11 @@ function Dashboard() {
                       Edit
                     </button>
 
-                    <button
-                      onClick={() => {
-                        alert("Delete feature coming soon!");
-                      }}
-                      className="flex-1 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
+                    <button  onClick={() => handleDeleteResume(resume._id)}
+                        className="flex-1 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
                     >
                       Delete
-                    </button>
+                    </button> 
 
                   </div>
 
