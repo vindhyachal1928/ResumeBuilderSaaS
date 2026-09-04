@@ -1,8 +1,6 @@
 const Resume = require("../models/Resume");
 
-// ==========================================
 // Create Resume
-// ==========================================
 const createResume = async (req, res) => {
   try {
     const {
@@ -15,6 +13,10 @@ const createResume = async (req, res) => {
       skills,
       experience,
       projects,
+      certificates,
+      linkedin,
+      github,
+portfolio,
     } = req.body;
 
     // Validate required fields
@@ -37,6 +39,10 @@ const createResume = async (req, res) => {
       skills,
       experience,
       projects,
+      certificates,
+      linkedin,
+      github,
+      portfolio,
     });
 
     return res.status(201).json({
@@ -44,7 +50,6 @@ const createResume = async (req, res) => {
       message: "Resume created successfully",
       resume,
     });
-
   } catch (error) {
     console.error("Create resume error:", error);
 
@@ -55,10 +60,7 @@ const createResume = async (req, res) => {
   }
 };
 
-
-// ==========================================
 // Get User's Resumes
-// ==========================================
 const getResumes = async (req, res) => {
   try {
     const resumes = await Resume.find({
@@ -69,7 +71,6 @@ const getResumes = async (req, res) => {
       success: true,
       resumes,
     });
-
   } catch (error) {
     console.error("Get resumes error:", error);
 
@@ -80,16 +81,46 @@ const getResumes = async (req, res) => {
   }
 };
 
+// Get Single Resume
+const getResumeById = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-// ==========================================
+    const resume = await Resume.findOne({
+      _id: id,
+      userId: req.user.userId,
+    });
+
+    // Resume not found
+    if (!resume) {
+      return res.status(404).json({
+        success: false,
+        message: "Resume not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      resume,
+    });
+  } catch (error) {
+    console.error("Get resume error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 // Update Resume
-// ==========================================
 const updateResume = async (req, res) => {
   try {
     const { id } = req.params;
 
     const {
       fullName,
+      jobTitle, 
       email,
       phone,
       location,
@@ -98,6 +129,11 @@ const updateResume = async (req, res) => {
       skills,
       experience,
       projects,
+      certificates,
+      linkedin,
+      github,
+      portfolio,
+      template,
     } = req.body;
 
     const resume = await Resume.findOneAndUpdate(
@@ -107,6 +143,7 @@ const updateResume = async (req, res) => {
       },
       {
         fullName,
+        jobTitle,
         email,
         phone,
         location,
@@ -115,6 +152,11 @@ const updateResume = async (req, res) => {
         skills,
         experience,
         projects,
+        certificates,
+        linkedin,
+        github,
+        portfolio,
+        template,
       },
       {
         new: true,
@@ -135,7 +177,6 @@ const updateResume = async (req, res) => {
       message: "Resume updated successfully",
       resume,
     });
-
   } catch (error) {
     console.error("Update resume error:", error);
 
@@ -146,10 +187,7 @@ const updateResume = async (req, res) => {
   }
 };
 
-
-// ==========================================
 // Delete Resume
-// ==========================================
 const deleteResume = async (req, res) => {
   try {
     const { id } = req.params;
@@ -171,7 +209,6 @@ const deleteResume = async (req, res) => {
       success: true,
       message: "Resume deleted successfully",
     });
-
   } catch (error) {
     console.error("Delete resume error:", error);
 
@@ -182,13 +219,11 @@ const deleteResume = async (req, res) => {
   }
 };
 
-
-// ==========================================
 // Export Controllers
-// ==========================================
 module.exports = {
   createResume,
   getResumes,
+  getResumeById,
   updateResume,
   deleteResume,
 };

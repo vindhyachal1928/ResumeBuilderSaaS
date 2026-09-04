@@ -3,6 +3,7 @@ const express = require("express");
 const {
   createResume,
   getResumes,
+  getResumeById,
   updateResume,
   deleteResume,
 } = require("../controllers/resume.controller");
@@ -14,8 +15,11 @@ const router = express.Router();
 // Create Resume
 router.post("/", authMiddleware, createResume);
 
-// Get User's Resumes
+// Get all user's resumes
 router.get("/", authMiddleware, getResumes);
+
+// Get single resume
+router.get("/:id", authMiddleware, getResumeById);
 
 // Update Resume
 router.put("/:id", authMiddleware, updateResume);

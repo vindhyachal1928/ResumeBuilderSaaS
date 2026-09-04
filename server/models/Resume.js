@@ -13,6 +13,11 @@ const resumeSchema = new mongoose.Schema(
       required: true,
     },
 
+    jobTitle: {
+      type: String,
+      default: "",
+    },
+
     email: {
       type: String,
       required: true,
@@ -45,6 +50,32 @@ const resumeSchema = new mongoose.Schema(
     projects: {
       type: String,
     },
+
+    certificates: {
+      type: String,
+      default: "",
+    },
+    linkedin: {
+      type: String,
+      default: "",
+    },
+
+    github: {
+      type: String,
+      default: "",
+    },
+
+    portfolio: {
+      type: String,
+      default: "",
+    },
+
+    template: {
+      type: String,
+      default: "professional",
+    },
+
+
     },
     {
     timestamps: true,

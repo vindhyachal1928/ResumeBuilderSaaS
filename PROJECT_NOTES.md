@@ -144,7 +144,7 @@ Resume deleted
    ↓
 Dashboard updates
 
-## Day 23 — Professional Resume Preview
+## Day 23 — Professional Resume Preview // karna hai
 Dashboard
    ↓
 My Resumes
