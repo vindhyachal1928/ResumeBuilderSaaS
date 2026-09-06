@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
-import {
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 function CreateResume() {
   const navigate = useNavigate();
-
-  // Get resume ID from URL
   const { id } = useParams();
+
+  const isEditMode = Boolean(id);
+
+  const [loading, setLoading] = useState(isEditMode);
+  const [saving, setSaving] = useState(false);
+
+  // Track whether the user has made unsaved changes
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Store validation errors
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -28,11 +34,9 @@ function CreateResume() {
     template: "professional",
   });
 
-  const [loading, setLoading] = useState(false);
-
-  // Load existing resume when editing
+  // Fetch existing resume when editing
   useEffect(() => {
-    if (!id) {
+    if (!isEditMode) {
       return;
     }
 
@@ -46,10 +50,9 @@ function CreateResume() {
         }
 
         const response = await fetch(
-          "http://localhost:5000/api/resumes",
+          `http://localhost:5000/api/resumes/${id}`,
           {
             method: "GET",
-
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -58,25 +61,14 @@ function CreateResume() {
 
         const data = await response.json();
 
-        console.log("Resume data:", data);
-
         if (!response.ok) {
-          alert(data.message);
-          return;
-        }
-
-        // Find the resume we want to edit
-        const resume = data.resumes.find(
-          (item) => item._id === id
-        );
-
-        if (!resume) {
-          alert("Resume not found");
+          alert(data.message || "Failed to fetch resume");
           navigate("/dashboard");
           return;
         }
 
-        // Put existing resume data into form
+        const resume = data.resume;
+
         setFormData({
           fullName: resume.fullName || "",
           jobTitle: resume.jobTitle || "",
@@ -94,129 +86,210 @@ function CreateResume() {
           portfolio: resume.portfolio || "",
           template: resume.template || "professional",
         });
-
       } catch (error) {
         console.error("Fetch resume error:", error);
-        alert("Unable to load resume");
+        alert("Something went wrong");
+        navigate("/dashboard");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchResume();
-
-  }, [id, navigate]);
-
+  }, [id, isEditMode, navigate]);
 
   // Handle input changes
   const handleChange = (event) => {
-    setFormData({
-      ...formData,
-      [event.target.name]: event.target.value,
-    });
+    const { name, value } = event.target;
+
+    setFormData((previousData) => ({
+      ...previousData,
+      [name]: value,
+    }));
+
+    // Mark form as changed
+    setIsDirty(true);
+
+    // Remove error for the field user is currently editing
+    if (errors[name]) {
+      setErrors((previousErrors) => {
+        const updatedErrors = { ...previousErrors };
+        delete updatedErrors[name];
+        return updatedErrors;
+      });
+    }
   };
 
+  // Handle leaving the form
+  const handleCancel = () => {
+    // Do nothing while resume is being saved
+    if (saving) {
+      return;
+    }
 
-  // Create / Update Resume
+    // Ask for confirmation if there are unsaved changes
+    if (isDirty) {
+      const confirmLeave = window.confirm(
+        "Are you sure you want to leave? Your unsaved changes will be lost."
+      );
+
+      if (!confirmLeave) {
+        return;
+      }
+    }
+
+    navigate("/dashboard");
+  };
+
+  // Validate resume form
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Please enter your full name.";
+    }
+
+    if (!formData.jobTitle.trim()) {
+      newErrors.jobTitle = "Please enter your professional title.";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Please enter your email.";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = "Please enter a valid email address.";
+      }
+    }
+
+    if (formData.summary.trim().length < 50) {
+      newErrors.summary =
+        "Professional Summary should be at least 50 characters.";
+    }
+
+    if (!formData.skills.trim()) {
+      newErrors.skills = "Please enter at least one skill.";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Save resume
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    // Prevent another submission while already saving
+    if (saving) {
+      return;
+    }
+
+    // Validate form before saving
+    if (!validateForm()) {
+      return;
+    }
+
     try {
+      setSaving(true);
+
       const token = localStorage.getItem("token");
 
-      // Check login
       if (!token) {
-        alert("Please login first");
         navigate("/login");
         return;
       }
 
-      setLoading(true);
-
-      // Create or Update
-      const url = id
+      const url = isEditMode
         ? `http://localhost:5000/api/resumes/${id}`
         : "http://localhost:5000/api/resumes";
 
-      const method = id ? "PUT" : "POST";
+      const method = isEditMode ? "PUT" : "POST";
 
       const response = await fetch(url, {
-        method: method,
-
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-
         body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
-      console.log("Resume response:", data);
-
       if (!response.ok) {
-        alert(data.message);
+        alert(data.message || "Failed to save resume");
         return;
       }
 
-      if (id) {
-        alert("Resume updated successfully!");
-      } else {
-        alert("Resume created successfully!");
-      }
+      alert(
+        isEditMode
+          ? "Resume updated successfully"
+          : "Resume created successfully"
+      );
 
-      // Go back to Dashboard
-      navigate("/dashboard");
+      // Changes are now saved
+      setIsDirty(false);
 
+      navigate(`/resume/${data.resume?._id || id}`);
     } catch (error) {
-      console.error("Resume error:", error);
-      alert("Unable to connect to server");
-
+      console.error("Save resume error:", error);
+      alert("Something went wrong");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-lg text-gray-600">Loading resume...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-10">
+    <div className="min-h-screen bg-gray-100 py-10 px-4">
+      <div className="max-w-4xl mx-auto">
 
-      <div className="mx-auto max-w-4xl">
+        {/* Page Header */}
+        <div className="mb-8">
+          <button
+            onClick={handleCancel}
+            disabled={saving}
+            className="mb-4 text-sm text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ← Back to Dashboard
+          </button>
 
-        {/* Heading */}
-        <h1 className="text-3xl font-bold text-gray-800">
-          {id ? "Edit Your Resume" : "Create Your Resume"}
-        </h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isEditMode ? "Edit Resume" : "Create Resume"}
+          </h1>
 
-        <p className="mt-2 text-gray-600">
-          {id
-            ? "Update your resume information."
-            : "Enter your information to create your professional resume."
-          }
-        </p>
+          <p className="mt-2 text-gray-600">
+            Fill in your information to create a professional resume.
+          </p>
+        </div>
 
+        <form onSubmit={handleSubmit} className="space-y-6">
 
-        <form
-          onSubmit={handleSubmit}
-          className="mt-8 space-y-8"
-        >
-
-          {/* ==================================
-              Personal Information
-          ================================== */}
-
-          <section className="rounded-xl bg-white p-6 shadow-sm">
-
-            <h2 className="text-xl font-bold">
+          {/* Personal Information */}
+          <section className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900">
               Personal Information
             </h2>
 
-            <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <p className="mt-1 text-sm text-gray-500">
+              Add the basic information that employers need to contact you.
+            </p>
+
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
 
               {/* Full Name */}
               <div>
-
-                <label className="mb-2 block font-medium">
-                  Full Name
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name <span className="text-red-500">*</span>
                 </label>
 
                 <input
@@ -224,19 +297,26 @@ function CreateResume() {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  placeholder="Enter your full name"
-                  required
-                  className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
+                  placeholder="e.g. Vindhyachal Gupta"
+                  className={`w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600 ${
+                    errors.fullName
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  }`}
                 />
 
+                {errors.fullName && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.fullName}
+                  </p>
+                )}
               </div>
-
 
               {/* Professional Title */}
               <div>
-
-                <label className="mb-2 block font-medium">
-                  Professional Title
+                <label className="mb-2 block font-medium text-gray-800">
+                  Professional Title{" "}
+                  <span className="text-red-500">*</span>
                 </label>
 
                 <input
@@ -244,22 +324,30 @@ function CreateResume() {
                   name="jobTitle"
                   value={formData.jobTitle}
                   onChange={handleChange}
-                  placeholder="e.g. Full Stack Developer"
-                  className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
+                  placeholder="e.g. Java Developer"
+                  className={`w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600 ${
+                    errors.jobTitle
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  }`}
                 />
 
+                {errors.jobTitle && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.jobTitle}
+                  </p>
+                )}
+
                 <p className="mt-1 text-xs text-gray-500">
-                  Example: Software Engineer, Java Developer, Frontend Developer
+                  Example: Java Developer, Software Engineer, Full Stack
+                  Developer
                 </p>
-
               </div>
-
 
               {/* Email */}
               <div>
-
-                <label className="mb-2 block font-medium">
-                  Email
+                <label className="mb-2 block font-medium text-gray-800">
+                  Email <span className="text-red-500">*</span>
                 </label>
 
                 <input
@@ -267,38 +355,47 @@ function CreateResume() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Enter your email"
-                  required
-                  className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
+                  placeholder="e.g. yourname@gmail.com"
+                  className={`w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600 ${
+                    errors.email
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  }`}
                 />
 
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.email}
+                  </p>
+                )}
               </div>
-
 
               {/* Phone */}
               <div>
-
-                <label className="mb-2 block font-medium">
-                  Phone
+                <label className="mb-2 block font-medium text-gray-800">
+                  Phone{" "}
+                  <span className="text-gray-400 font-normal">
+                    (Optional)
+                  </span>
                 </label>
 
                 <input
-                  type="tel"
+                  type="text"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="Enter your phone number"
-                  className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
+                  placeholder="e.g. +91 9876543210"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-600"
                 />
-
               </div>
 
-
               {/* Location */}
-              <div>
-
-                <label className="mb-2 block font-medium">
-                  Location
+              <div className="md:col-span-2">
+                <label className="mb-2 block font-medium text-gray-800">
+                  Location{" "}
+                  <span className="text-gray-400 font-normal">
+                    (Optional)
+                  </span>
                 </label>
 
                 <input
@@ -306,169 +403,243 @@ function CreateResume() {
                   name="location"
                   value={formData.location}
                   onChange={handleChange}
-                  placeholder="City, Country"
-                  className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
+                  placeholder="e.g. Greater Noida, Uttar Pradesh, India"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-600"
                 />
-
               </div>
-
             </div>
-
           </section>
 
-
-          {/* ==================================
-              Professional Summary
-          ================================== */}
-
-          <section className="rounded-xl bg-white p-6 shadow-sm">
-
-            <h2 className="text-xl font-bold">
+          {/* Professional Summary */}
+          <section className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900">
               Professional Summary
             </h2>
 
-            <textarea
-              name="summary"
-              value={formData.summary}
+            <p className="mt-1 text-sm text-gray-500">
+              Write 2–4 lines describing your experience, strengths, and
+              career goals.
+            </p>
+
+            <div>
+              <textarea
+                name="summary"
+                value={formData.summary}
+                onChange={handleChange}
+                rows="5"
+                maxLength={500}
+                placeholder="Example: Motivated Java Developer with experience in building web applications using Java, Spring Boot, REST APIs and MySQL. Strong problem-solving skills with a passion for developing scalable software solutions."
+                className={`mt-5 w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600 ${
+                  errors.summary
+                    ? "border-red-500"
+                    : "border-gray-300"
+                }`}
+              />
+
+              {errors.summary && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.summary}
+                </p>
+              )}
+
+              <div className="mt-2 flex justify-between text-xs text-gray-500">
+                <span>
+                  Keep your summary concise and focused.
+                </span>
+
+                <span>
+                  {formData.summary.length} / 500
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* Skills */}
+          <section className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Skills
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Separate each skill using a comma.
+            </p>
+
+            <input
+              type="text"
+              name="skills"
+              value={formData.skills}
               onChange={handleChange}
-              placeholder="Write a short professional summary"
-              rows="5"
-              className="mt-5 w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
+              placeholder="Java, Spring Boot, SQL, MongoDB, React, Git"
+              className={`mt-5 w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600 ${
+                errors.skills
+                  ? "border-red-500"
+                  : "border-gray-300"
+              }`}
             />
 
+            {errors.skills && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.skills}
+              </p>
+            )}
+
+            <p className="mt-2 text-xs text-gray-500">
+              These skills will automatically appear as separate items in
+              the resume.
+            </p>
           </section>
 
+          {/* Experience */}
+          <section className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Experience
+            </h2>
 
-          {/* ==================================
-              Education
-          ================================== */}
+            <p className="mt-1 text-sm text-gray-500">
+              Add your internships, jobs, or other relevant professional
+              experience.
+            </p>
 
-          <section className="rounded-xl bg-white p-6 shadow-sm">
+            <div>
+              <textarea
+                name="experience"
+                value={formData.experience}
+                onChange={handleChange}
+                rows="8"
+                maxLength={1500}
+                placeholder={`Example:
 
-            <h2 className="text-xl font-bold">
+Java Developer Intern | ABC Technologies
+June 2025 - August 2025
+
+• Developed REST APIs using Java and Spring Boot
+• Worked with MySQL and Git
+• Improved application performance and fixed bugs`}
+                className="mt-5 w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-600 whitespace-pre-line"
+              />
+
+              <div className="mt-2 flex justify-between text-xs text-gray-500">
+                <span>
+                  Focus on your role, responsibilities, and achievements.
+                </span>
+
+                <span>
+                  {formData.experience.length} / 1500
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* Education */}
+          <section className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900">
               Education
             </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Add your degree, university, graduation year, and other
+              relevant details.
+            </p>
 
             <textarea
               name="education"
               value={formData.education}
               onChange={handleChange}
-              placeholder="Example: B.Tech in Computer Science, Sharda University, 2023-2027"
-              rows="5"
-              className="mt-5 w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
-            />
-
-          </section>
-
-
-          {/* ==================================
-              Skills
-          ================================== */}
-
-          <section className="rounded-xl bg-white p-6 shadow-sm">
-
-            <h2 className="text-xl font-bold">
-              Skills
-            </h2>
-
-            <textarea
-              name="skills"
-              value={formData.skills}
-              onChange={handleChange}
-              placeholder="Example: Java, React, Node.js, MongoDB"
-              rows="4"
-              className="mt-5 w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
-            />
-
-          </section>
-
-
-          {/* ==================================
-              Experience
-          ================================== */}
-
-          <section className="rounded-xl bg-white p-6 shadow-sm">
-
-            <h2 className="text-xl font-bold">
-              Experience
-            </h2>
-
-            <textarea
-              name="experience"
-              value={formData.experience}
-              onChange={handleChange}
-              placeholder="Describe your internship or work experience"
               rows="6"
-              className="mt-5 w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
-            />
+              placeholder={`Example:
 
+B.Tech in Computer Science Engineering
+Sharda University
+2023 - 2027
+
+CGPA: 8.3/10`}
+              className="mt-5 w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-600 whitespace-pre-line"
+            />
           </section>
 
-
-          {/* ==================================
-              Projects
-          ================================== */}
-
-          <section className="rounded-xl bg-white p-6 shadow-sm">
-
-            <h2 className="text-xl font-bold">
+          {/* Projects */}
+          <section className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900">
               Projects
             </h2>
 
-            <textarea
-              name="projects"
-              value={formData.projects}
-              onChange={handleChange}
-              placeholder="Describe your projects"
-              rows="6"
-              className="mt-5 w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-600"
-            />
+            <p className="mt-1 text-sm text-gray-500">
+              Add projects that demonstrate your technical skills.
+            </p>
 
+            <div>
+              <textarea
+                name="projects"
+                value={formData.projects}
+                onChange={handleChange}
+                rows="8"
+                maxLength={1500}
+                placeholder={`Example:
+
+Resume Builder SaaS
+
+• Built a full-stack resume builder using React and Node.js
+• Implemented JWT authentication and MongoDB
+• Added multiple professional resume templates
+• Implemented resume creation, editing and deletion`}
+                className="mt-5 w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-600 whitespace-pre-line"
+              />
+
+              <div className="mt-2 flex justify-between text-xs text-gray-500">
+                <span>
+                  Highlight what you built, technologies used, and your
+                  impact.
+                </span>
+
+                <span>
+                  {formData.projects.length} / 1500
+                </span>
+              </div>
+            </div>
           </section>
 
-
-          {/* ==================================
-              Certificates
-          ================================== */}
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Certificates
+          {/* Certifications */}
+          <section className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Certifications
             </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Add relevant certifications, courses, or training programs.
+            </p>
 
             <textarea
               name="certificates"
               value={formData.certificates}
               onChange={handleChange}
+              rows="5"
               placeholder={`Example:
-AWS Cloud Practitioner
-Java Programming Certificate
-Web Development Certificate`}
-              rows="6"
-              className="w-full px-5 py-4 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+
+Java Programming Certificate - Udemy
+Full Stack Web Development - Udemy`}
+              className="mt-5 w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-600 whitespace-pre-line"
             />
+          </section>
 
-          </div>
-
-
-          {/* ==================================
-              Social Links
-          ================================== */}
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          {/* Social Links */}
+          <section className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900">
               Social & Portfolio Links
             </h2>
 
-            <div className="space-y-4">
+            <p className="mt-1 text-sm text-gray-500">
+              Add links that employers can use to learn more about you.
+            </p>
+
+            <div className="mt-5 space-y-5">
 
               {/* LinkedIn */}
               <div>
-
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  LinkedIn
+                <label className="mb-2 block font-medium text-gray-800">
+                  LinkedIn{" "}
+                  <span className="text-gray-400 font-normal">
+                    (Optional)
+                  </span>
                 </label>
 
                 <input
@@ -476,18 +647,18 @@ Web Development Certificate`}
                   name="linkedin"
                   value={formData.linkedin}
                   onChange={handleChange}
-                  placeholder="https://linkedin.com/in/yourname"
-                  className="w-full px-5 py-3 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://www.linkedin.com/in/yourname"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-600"
                 />
-
               </div>
-
 
               {/* GitHub */}
               <div>
-
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  GitHub
+                <label className="mb-2 block font-medium text-gray-800">
+                  GitHub{" "}
+                  <span className="text-gray-400 font-normal">
+                    (Optional)
+                  </span>
                 </label>
 
                 <input
@@ -496,17 +667,17 @@ Web Development Certificate`}
                   value={formData.github}
                   onChange={handleChange}
                   placeholder="https://github.com/yourusername"
-                  className="w-full px-5 py-3 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-600"
                 />
-
               </div>
-
 
               {/* Portfolio */}
               <div>
-
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Portfolio
+                <label className="mb-2 block font-medium text-gray-800">
+                  Portfolio{" "}
+                  <span className="text-gray-400 font-normal">
+                    (Optional)
+                  </span>
                 </label>
 
                 <input
@@ -515,190 +686,142 @@ Web Development Certificate`}
                   value={formData.portfolio}
                   onChange={handleChange}
                   placeholder="https://yourportfolio.com"
-                  className="w-full px-5 py-3 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-600"
                 />
-
               </div>
 
             </div>
+          </section>
 
-          </div>
-
-
-          {/* ==================================
-              Resume Template
-          ================================== */}
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Choose Resume Template
+          {/* Template Selection */}
+          <section className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Choose Template
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <p className="mt-1 text-sm text-gray-500">
+              Select the design you want to use for your resume.
+            </p>
 
-              {/* Professional Template */}
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    template: "professional",
-                  })
-                }
-                className={`p-5 rounded-xl border-2 text-left transition ${
+            <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              {/* Professional */}
+              <label
+                className={`cursor-pointer rounded-lg border-2 p-4 ${
                   formData.template === "professional"
                     ? "border-blue-600 bg-blue-50"
-                    : "border-gray-300 hover:border-blue-400"
+                    : "border-gray-200"
                 }`}
               >
+                <input
+                  type="radio"
+                  name="template"
+                  value="professional"
+                  checked={formData.template === "professional"}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
 
-                <div className="h-32 bg-white border border-gray-200 rounded-lg p-3 mb-4 shadow-sm">
-
-                  <div className="h-3 w-24 bg-gray-800 rounded mb-3 mx-auto"></div>
-
-                  <div className="h-2 w-full bg-gray-300 rounded mb-2"></div>
-
-                  <div className="h-2 w-5/6 bg-gray-300 rounded mb-2"></div>
-
-                  <div className="h-2 w-full bg-gray-300 rounded"></div>
-
-                </div>
-
-                <h3 className="font-semibold text-gray-900">
+                <span className="font-medium">
                   Professional
-                </h3>
+                </span>
 
-                <p className="text-sm text-gray-500 mt-1">
-                  Clean and professional design
+                <p className="mt-2 text-xs text-gray-500">
+                  Clean and ATS-friendly
                 </p>
+              </label>
 
-                {formData.template === "professional" && (
-                  <p className="text-sm text-blue-600 font-medium mt-3">
-                    ✓ Selected
-                  </p>
-                )}
-
-              </button>
-
-
-              {/* Modern Template */}
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    template: "modern",
-                  })
-                }
-                className={`p-5 rounded-xl border-2 text-left transition ${
+              {/* Modern */}
+              <label
+                className={`cursor-pointer rounded-lg border-2 p-4 ${
                   formData.template === "modern"
                     ? "border-blue-600 bg-blue-50"
-                    : "border-gray-300 hover:border-blue-400"
+                    : "border-gray-200"
                 }`}
               >
+                <input
+                  type="radio"
+                  name="template"
+                  value="modern"
+                  checked={formData.template === "modern"}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
 
-                <div className="h-32 bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 shadow-sm">
-
-                  <div className="h-5 w-20 bg-blue-600 rounded mb-3"></div>
-
-                  <div className="h-2 w-32 bg-gray-400 rounded mb-2"></div>
-
-                  <div className="h-2 w-full bg-gray-300 rounded mb-2"></div>
-
-                  <div className="h-2 w-4/5 bg-gray-300 rounded"></div>
-
-                </div>
-
-                <h3 className="font-semibold text-gray-900">
+                <span className="font-medium">
                   Modern
-                </h3>
+                </span>
 
-                <p className="text-sm text-gray-500 mt-1">
-                  Modern and stylish design
+                <p className="mt-2 text-xs text-gray-500">
+                  Modern and clean design
                 </p>
+              </label>
 
-                {formData.template === "modern" && (
-                  <p className="text-sm text-blue-600 font-medium mt-3">
-                    ✓ Selected
-                  </p>
-                )}
-
-              </button>
-
-
-              {/* Minimal Template */}
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    template: "minimal",
-                  })
-                }
-                className={`p-5 rounded-xl border-2 text-left transition ${
+              {/* Minimal */}
+              <label
+                className={`cursor-pointer rounded-lg border-2 p-4 ${
                   formData.template === "minimal"
                     ? "border-blue-600 bg-blue-50"
-                    : "border-gray-300 hover:border-blue-400"
+                    : "border-gray-200"
                 }`}
               >
+                <input
+                  type="radio"
+                  name="template"
+                  value="minimal"
+                  checked={formData.template === "minimal"}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
 
-                <div className="h-32 bg-white border border-gray-200 rounded-lg p-3 mb-4 shadow-sm">
-
-                  <div className="h-3 w-28 bg-gray-600 rounded mb-4"></div>
-
-                  <div className="h-px w-full bg-gray-300 mb-3"></div>
-
-                  <div className="h-2 w-full bg-gray-200 rounded mb-2"></div>
-
-                  <div className="h-2 w-3/4 bg-gray-200 rounded mb-3"></div>
-
-                  <div className="h-px w-full bg-gray-300"></div>
-
-                </div>
-
-                <h3 className="font-semibold text-gray-900">
+                <span className="font-medium">
                   Minimal
-                </h3>
+                </span>
 
-                <p className="text-sm text-gray-500 mt-1">
-                  Simple and elegant design
+                <p className="mt-2 text-xs text-gray-500">
+                  Simple and elegant
                 </p>
-
-                {formData.template === "minimal" && (
-                  <p className="text-sm text-blue-600 font-medium mt-3">
-                    ✓ Selected
-                  </p>
-                )}
-
-              </button>
+              </label>
 
             </div>
+          </section>
+
+          {/* Submit */}
+          <div className="flex justify-end gap-3 pb-10">
+
+            {/* Cancel Button */}
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={saving}
+              className="px-6 py-3 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+
+            {/* Save Button */}
+            <button
+              type="submit"
+              disabled={saving}
+              className={`px-6 py-3 rounded-lg font-medium text-white transition ${
+                saving
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
+            >
+              {saving
+                ? isEditMode
+                  ? "Updating..."
+                  : "Creating..."
+                : isEditMode
+                ? "Update Resume"
+                : "Create Resume"}
+            </button>
 
           </div>
 
-
-          {/* ==================================
-              Submit
-          ================================== */}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading
-              ? "Saving..."
-              : id
-                ? "Update Resume"
-                : "Save Resume"
-            }
-          </button>
-
         </form>
-
       </div>
-
     </div>
   );
 }

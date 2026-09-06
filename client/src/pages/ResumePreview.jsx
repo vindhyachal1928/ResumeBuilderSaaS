@@ -53,13 +53,19 @@ function ResumePreview() {
     fetchResume();
   }, [id, navigate]);
 
-  // Loading
+  // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600 text-lg">
-          Loading resume...
-        </p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <p className="text-lg font-medium text-gray-700">
+            Loading resume...
+          </p>
+
+          <p className="mt-1 text-sm text-gray-500">
+            Please wait
+          </p>
+        </div>
       </div>
     );
   }
@@ -67,10 +73,19 @@ function ResumePreview() {
   // Resume not found
   if (!resume) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500 text-lg">
-          Resume not found
-        </p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <p className="text-xl font-semibold text-red-500">
+            Resume not found
+          </p>
+
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="mt-4 px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Back to Dashboard
+          </button>
+        </div>
       </div>
     );
   }
@@ -91,34 +106,53 @@ function ResumePreview() {
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
 
-      {/* Top Buttons */}
-      <div className="max-w-[794px] mx-auto mb-6 flex justify-end gap-3 print-hidden">
+      {/* Top Action Bar */}
+      <div className="max-w-[794px] mx-auto mb-6 print-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3">
 
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800"
-        >
-          ← Dashboard
-        </button>
+          {/* Page Title */}
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">
+              Resume Preview
+            </h1>
 
-        <button
-          onClick={() => navigate(`/edit-resume/${resume._id}`)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Edit Resume
-        </button>
+            <p className="text-sm text-gray-500">
+              Review your resume before downloading
+            </p>
+          </div>
 
-        <button
-          onClick={() => window.print()}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-        >
-          Print / Save PDF
-        </button>
+          {/* Buttons */}
+          <div className="flex flex-wrap gap-2">
 
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-800"
+            >
+              ← Dashboard
+            </button>
+
+            <button
+              onClick={() => navigate(`/edit-resume/${resume._id}`)}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Edit Resume
+            </button>
+
+            <button
+              onClick={() => window.print()}
+              className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+            >
+              Print / Save PDF
+            </button>
+
+          </div>
+        </div>
       </div>
 
-      {/* Selected Resume Template */}
-      {renderTemplate()}
+      {/* Resume */}
+      <main>
+        {renderTemplate()}
+      </main>
 
     </div>
   );
