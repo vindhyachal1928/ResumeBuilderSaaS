@@ -25,36 +25,44 @@ const resumeSchema = new mongoose.Schema(
 
     phone: {
       type: String,
+      default: "",
     },
 
     location: {
       type: String,
+      default: "",
     },
 
     summary: {
       type: String,
+      default: "",
     },
 
     education: {
       type: String,
+      default: "",
     },
 
     skills: {
       type: String,
+      default: "",
     },
 
     experience: {
       type: String,
+      default: "",
     },
 
     projects: {
       type: String,
+      default: "",
     },
 
     certificates: {
       type: String,
       default: "",
     },
+
     linkedin: {
       type: String,
       default: "",
@@ -70,16 +78,20 @@ const resumeSchema = new mongoose.Schema(
       default: "",
     },
 
+    // Profile photo for Template 2
+    photo: {
+      type: String,
+      default: "",
+    },
+
     template: {
       type: String,
-      default: "professional",
+      default: "Template 1",
     },
-
-
-    },
-    {
+  },
+  {
     timestamps: true,
-    }
+  }
 );
 
 module.exports = mongoose.model("Resume", resumeSchema);
