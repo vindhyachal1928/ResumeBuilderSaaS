@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import VerifyOtp from "./pages/VerifyOtp";
+import ResetPassword from "./pages/ResetPassword";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -18,6 +21,12 @@ function App() {
         <Route path="/" element={<Home />} />
 
         <Route path="/login" element={<Login />}/>
+
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        <Route path="/verify-otp" element={<VerifyOtp />} />
+
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route path="/Signup" element={<Signup/>}/>
 

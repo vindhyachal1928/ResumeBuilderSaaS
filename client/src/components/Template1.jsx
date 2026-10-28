@@ -1,258 +1,286 @@
-import { useState } from "react";
-import {
-  Mail,
-  Phone,
-  MapPin,
-  Globe,
-} from "lucide-react";
-
 function Template1({ resume }) {
-  const formatContent = (content) => {
-    if (!content || !content.trim()) return [];
+  const parseArray = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
 
-    return content
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line !== "")
-      .map((line) => {
-        const isBullet =
-          line.startsWith("-") ||
-          line.startsWith("•") ||
-          line.startsWith("*");
-
-        if (isBullet) {
-          return {
-            type: "bullet",
-            text: line.substring(1).trim(),
-          };
-        }
-
-        return {
-          type: "text",
-          text: line,
-        };
-      });
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   };
 
-  const renderContent = (content) => {
-    const items = formatContent(content);
+  const formatBullets = (content) => {
+    if (!content) return [];
 
-    return (
-      <div className="space-y-1">
-        {items.map((item, index) =>
-          item.type === "bullet" ? (
-            <div
-              key={index}
-              className="flex gap-2 text-sm leading-6 text-gray-800"
-            >
-              <span>•</span>
-              <span>{item.text}</span>
-            </div>
-          ) : (
-            <p
-              key={index}
-              className="text-sm leading-6 text-gray-800"
-            >
-              {item.text}
-            </p>
-          )
-        )}
-      </div>
-    );
+    return String(content)
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => line.replace(/^[-•*]\s*/, ""));
   };
 
   const getSafeUrl = (url) => {
-    if (!url || !url.trim()) return "#";
+    if (!url || !String(url).trim()) return "#";
 
-    const trimmedUrl = url.trim();
+    const value = String(url).trim();
 
-    if (
-      trimmedUrl.startsWith("http://") ||
-      trimmedUrl.startsWith("https://")
-    ) {
-      return trimmedUrl;
-    }
-
-    return `https://${trimmedUrl}`;
+    return value.startsWith("http://") || value.startsWith("https://")
+      ? value
+      : `https://${value}`;
   };
 
   const skills = resume.skills
-    ? resume.skills
+    ? String(resume.skills)
         .split(",")
         .map((skill) => skill.trim())
-        .filter((skill) => skill !== "")
+        .filter(Boolean)
     : [];
+
+  const experienceEntries = parseArray(resume.experience);
+  const projectEntries = parseArray(resume.projects);
+  const educationEntries = parseArray(resume.education).filter((education) =>
+    Object.values(education || {}).some(
+      (value) => String(value ?? "").trim() !== ""
+    )
+  );
 
   return (
     <div
       id="resume-template"
-      className="bg-white text-gray-900 w-[794px] min-h-[1123px] mx-auto px-12 py-10 shadow-lg"
+      className="bg-white text-gray-900 w-[794px] min-h-[1123px] mx-auto px-10 py-6 shadow-lg font-sans"
     >
-      {/* ================= HEADER ================= */}
-      <header className="text-center border-b border-gray-300 pb-5">
-        <h1 className="text-3xl font-bold tracking-wide uppercase">
+      {/* HEADER */}
+      <header className="text-center">
+        <h1 className="text-[24px] font-bold leading-tight">
           {resume.fullName || "Your Name"}
         </h1>
 
-        <p className="mt-1 text-base font-medium text-gray-700">
-          {resume.professionalTitle || "Professional Title"}
-        </p>
+        {(resume.email ||
+          resume.phone ||
+          resume.linkedin ||
+          resume.github ||
+          resume.portfolio) && (
+          <div className="mt-1.5 text-[11px] leading-5 text-gray-800">
+            {resume.phone && <span>{resume.phone}</span>}
 
-        {/* Contact Information */}
-        <div className="flex flex-wrap justify-center items-center gap-x-5 gap-y-2 mt-4 text-sm text-gray-700">
-          {resume.email && (
-            <div className="flex items-center gap-1.5">
-              <Mail size={14} />
-              <span>{resume.email}</span>
-            </div>
-          )}
+            {resume.phone && resume.email && <span> · </span>}
 
-          {resume.phone && (
-            <div className="flex items-center gap-1.5">
-              <Phone size={14} />
-              <span>{resume.phone}</span>
-            </div>
-          )}
+            {resume.email && <span>{resume.email}</span>}
 
-          {resume.location && (
-            <div className="flex items-center gap-1.5">
-              <MapPin size={14} />
-              <span>{resume.location}</span>
-            </div>
-          )}
-        </div>
+            {(resume.linkedin ||
+              resume.github ||
+              resume.portfolio) && (
+              <>
+                <br />
 
-        {/* Social Links */}
-        <div className="flex flex-wrap justify-center items-center gap-5 mt-2 text-sm">
-          {/* LinkedIn */}
-          {resume.linkedin && (
-            <a
-              href={getSafeUrl(resume.linkedin)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-gray-700 hover:text-blue-600"
-            >
-              <span className="font-bold text-xs border border-gray-500 rounded px-1">
-                in
-              </span>
+                {resume.linkedin && (
+                  <a
+                    href={getSafeUrl(resume.linkedin)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    LinkedIn
+                  </a>
+                )}
 
-              <span>LinkedIn</span>
-            </a>
-          )}
+                {resume.linkedin && resume.github && <span> · </span>}
 
-          {/* GitHub */}
-          {resume.github && (
-            <a
-              href={getSafeUrl(resume.github)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-gray-700 hover:text-gray-900"
-            >
-              <span className="font-bold text-xs border border-gray-500 rounded px-1">
-                GH
-              </span>
+                {resume.github && (
+                  <a
+                    href={getSafeUrl(resume.github)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    GitHub
+                  </a>
+                )}
 
-              <span>GitHub</span>
-            </a>
-          )}
+                {(resume.linkedin || resume.github) &&
+                  resume.portfolio && <span> · </span>}
 
-          {/* Portfolio */}
-          {resume.portfolio && (
-            <a
-              href={getSafeUrl(resume.portfolio)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-gray-700 hover:text-blue-600"
-            >
-              <Globe size={14} />
-
-              <span>Portfolio</span>
-            </a>
-          )}
-        </div>
+                {resume.portfolio && (
+                  <a
+                    href={getSafeUrl(resume.portfolio)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    Portfolio
+                  </a>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </header>
 
-      {/* ================= PROFESSIONAL SUMMARY ================= */}
+      {/* PROFESSIONAL SUMMARY */}
       {resume.summary && (
-        <section className="mt-6">
-          <h2 className="text-base font-bold uppercase tracking-wide border-b border-gray-400 pb-1">
+        <section className="mt-4">
+          <h2 className="text-[12px] font-bold uppercase tracking-wide border-b border-gray-500 pb-1">
             Professional Summary
           </h2>
 
-          <div className="mt-3">
-            {renderContent(resume.summary)}
-          </div>
+          <p className="mt-1.5 text-[10.5px] leading-[1.4] text-gray-800 text-justify">
+            {resume.summary}
+          </p>
         </section>
       )}
 
-      {/* ================= SKILLS ================= */}
+      {/* SKILLS */}
       {skills.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-base font-bold uppercase tracking-wide border-b border-gray-400 pb-1">
+        <section className="mt-3">
+          <h2 className="text-[12px] font-bold uppercase tracking-wide border-b border-gray-500 pb-1">
             Skills
           </h2>
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-1.5 text-[10.5px] leading-[1.45] text-gray-800">
             {skills.map((skill, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 border border-gray-400 rounded text-sm text-gray-800"
-              >
+              <span key={index}>
                 {skill}
+                {index < skills.length - 1 ? ", " : ""}
               </span>
             ))}
           </div>
         </section>
       )}
 
-      {/* ================= PROJECTS ================= */}
-      {resume.projects && (
-        <section className="mt-6">
-          <h2 className="text-base font-bold uppercase tracking-wide border-b border-gray-400 pb-1">
+      {/* EXPERIENCE */}
+      {experienceEntries.length > 0 && (
+        <section className="mt-3">
+          <h2 className="text-[12px] font-bold uppercase tracking-wide border-b border-gray-500 pb-1">
+            Internships
+          </h2>
+
+          <div className="mt-1.5 space-y-2.5">
+            {experienceEntries.map((experience, index) => {
+              const bullets = formatBullets(experience.description);
+
+              return (
+                <div key={index}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <h3 className="text-[11px] font-bold leading-4">
+                        {experience.company || "Company Name"}
+                      </h3>
+
+                      <p className="text-[10.5px] font-medium leading-4">
+                        {experience.jobTitle || "Job Title"}
+                      </p>
+                    </div>
+
+                    {(experience.startDate || experience.endDate) && (
+                      <p className="text-[10px] font-medium whitespace-nowrap">
+                        {experience.startDate}
+                        {experience.startDate &&
+                          experience.endDate &&
+                          "–"}
+                        {experience.endDate}
+                      </p>
+                    )}
+                  </div>
+
+                  {bullets.length > 0 && (
+                    <ul className="mt-1 ml-4 list-disc space-y-0.5 text-[10px] leading-[1.35] text-gray-800">
+                      {bullets.map((bullet, bulletIndex) => (
+                        <li key={bulletIndex}>{bullet}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* PROJECTS */}
+      {projectEntries.length > 0 && (
+        <section className="mt-3">
+          <h2 className="text-[12px] font-bold uppercase tracking-wide border-b border-gray-500 pb-1">
             Projects
           </h2>
 
-          <div className="mt-3">
-            {renderContent(resume.projects)}
+          <div className="mt-1.5 space-y-2.5">
+            {projectEntries.map((project, index) => {
+              const bullets = formatBullets(project.description);
+
+              return (
+                <div key={index}>
+                  <h3 className="text-[11px] font-bold leading-4">
+                    {project.name || "Project Name"}
+                  </h3>
+
+                  {project.technologies && (
+                    <p className="text-[10px] font-medium leading-4">
+                      {project.technologies}
+                    </p>
+                  )}
+
+                  {bullets.length > 0 && (
+                    <ul className="mt-1 ml-4 list-disc space-y-0.5 text-[10px] leading-[1.35] text-gray-800">
+                      {bullets.map((bullet, bulletIndex) => (
+                        <li key={bulletIndex}>{bullet}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
 
-      {/* ================= EDUCATION ================= */}
-      {resume.education && (
-        <section className="mt-6">
-          <h2 className="text-base font-bold uppercase tracking-wide border-b border-gray-400 pb-1">
+      {/* EDUCATION */}
+      {educationEntries.length > 0 && (
+        <section className="mt-3">
+          <h2 className="text-[12px] font-bold uppercase tracking-wide border-b border-gray-500 pb-1">
             Education
           </h2>
 
-          <div className="mt-3">
-            {renderContent(resume.education)}
-          </div>
-        </section>
-      )}
+          <div className="mt-1.5 space-y-2.5">
+            {educationEntries.map((education, index) => (
+              <div
+                key={index}
+                className="flex items-start justify-between gap-4"
+              >
+                <div>
+                  {education.degree && (
+                    <h3 className="text-[11px] font-bold leading-4">
+                      {education.degree}
+                    </h3>
+                  )}
 
-      {/* ================= EXPERIENCE ================= */}
-      {resume.experience && (
-        <section className="mt-6">
-          <h2 className="text-base font-bold uppercase tracking-wide border-b border-gray-400 pb-1">
-            Experience
-          </h2>
+                  {education.institution && (
+                    <p className="text-[10.5px] leading-4">
+                      {education.institution}
+                    </p>
+                  )}
 
-          <div className="mt-3">
-            {renderContent(resume.experience)}
-          </div>
-        </section>
-      )}
+                  {(education.field || education.details) && (
+                    <p className="text-[10px] text-gray-700 leading-4">
+                      {education.field || education.details}
+                    </p>
+                  )}
 
-      {/* ================= CERTIFICATIONS ================= */}
-      {resume.certificates && (
-        <section className="mt-6">
-          <h2 className="text-base font-bold uppercase tracking-wide border-b border-gray-400 pb-1">
-            Certifications
-          </h2>
+                  {education.gpa && (
+                    <p className="text-[10px] text-gray-700 leading-4">
+                      CGPA: {education.gpa}
+                    </p>
+                  )}
+                </div>
 
-          <div className="mt-3">
-            {renderContent(resume.certificates)}
+                {(education.graduationDate || education.endDate) && (
+                  <p className="text-[10px] font-medium whitespace-nowrap">
+                    {education.graduationDate || education.endDate}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
         </section>
       )}

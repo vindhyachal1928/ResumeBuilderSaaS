@@ -1,36 +1,26 @@
+const mongoose = require("mongoose");
 const Resume = require("../models/Resume");
 
-// Create Resume
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const hasValidResumeIdentity = (fullName, email) =>
+  typeof fullName === "string" &&
+  fullName.trim() !== "" &&
+  typeof email === "string" &&
+  emailRegex.test(email.trim());
+
+const isValidResumeId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+// =========================================================
+// CREATE RESUME
+// =========================================================
+
 const createResume = async (req, res) => {
   try {
     const {
+      title,
       fullName,
-      email,
-      phone,
-      location,
-      summary,
-      education,
-      skills,
-      experience,
-      projects,
-      certificates,
-      linkedin,
-      github,
-portfolio,
-    } = req.body;
-
-    // Validate required fields
-    if (!fullName || !email) {
-      return res.status(400).json({
-        success: false,
-        message: "Full name and email are required",
-      });
-    }
-
-    // Create resume
-    const resume = await Resume.create({
-      userId: req.user.userId,
-      fullName,
+      jobTitle,
       email,
       phone,
       location,
@@ -43,6 +33,43 @@ portfolio,
       linkedin,
       github,
       portfolio,
+      photo,
+      template,
+    } = req.body;
+
+    // Validate required fields
+    if (!hasValidResumeIdentity(fullName, email)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid full name and email are required",
+      });
+    }
+
+    // Create resume
+    const resume = await Resume.create({
+      userId: req.user.userId,
+
+      title: typeof title === "string" ? title.trim() : "",
+      fullName: fullName.trim(),
+      jobTitle,
+      email: email.trim().toLowerCase(),
+      phone,
+      location,
+      summary,
+      education,
+      skills,
+      experience,
+      projects,
+      certificates,
+      linkedin,
+      github,
+      portfolio,
+
+      // New photo support
+      photo,
+
+      // New template support
+      template,
     });
 
     return res.status(201).json({
@@ -60,7 +87,10 @@ portfolio,
   }
 };
 
-// Get User's Resumes
+// =========================================================
+// GET USER'S RESUMES
+// =========================================================
+
 const getResumes = async (req, res) => {
   try {
     const resumes = await Resume.find({
@@ -81,10 +111,20 @@ const getResumes = async (req, res) => {
   }
 };
 
-// Get Single Resume
+// =========================================================
+// GET SINGLE RESUME
+// =========================================================
+
 const getResumeById = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!isValidResumeId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid resume ID",
+      });
+    }
 
     const resume = await Resume.findOne({
       _id: id,
@@ -113,14 +153,25 @@ const getResumeById = async (req, res) => {
   }
 };
 
-// Update Resume
+// =========================================================
+// UPDATE RESUME
+// =========================================================
+
 const updateResume = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!isValidResumeId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid resume ID",
+      });
+    }
+
     const {
+      title,
       fullName,
-      jobTitle, 
+      jobTitle,
       email,
       phone,
       location,
@@ -133,8 +184,16 @@ const updateResume = async (req, res) => {
       linkedin,
       github,
       portfolio,
+      photo,
       template,
     } = req.body;
+
+    if (!hasValidResumeIdentity(fullName, email)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid full name and email are required",
+      });
+    }
 
     const resume = await Resume.findOneAndUpdate(
       {
@@ -142,9 +201,10 @@ const updateResume = async (req, res) => {
         userId: req.user.userId,
       },
       {
-        fullName,
+        title: typeof title === "string" ? title.trim() : "",
+        fullName: fullName.trim(),
         jobTitle,
-        email,
+        email: email.trim().toLowerCase(),
         phone,
         location,
         summary,
@@ -156,6 +216,11 @@ const updateResume = async (req, res) => {
         linkedin,
         github,
         portfolio,
+
+        // Save photo
+        photo,
+
+        // Save selected template
         template,
       },
       {
@@ -187,10 +252,20 @@ const updateResume = async (req, res) => {
   }
 };
 
-// Delete Resume
+// =========================================================
+// DELETE RESUME
+// =========================================================
+
 const deleteResume = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!isValidResumeId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid resume ID",
+      });
+    }
 
     const resume = await Resume.findOneAndDelete({
       _id: id,
@@ -219,7 +294,10 @@ const deleteResume = async (req, res) => {
   }
 };
 
-// Export Controllers
+// =========================================================
+// EXPORT CONTROLLERS
+// =========================================================
+
 module.exports = {
   createResume,
   getResumes,

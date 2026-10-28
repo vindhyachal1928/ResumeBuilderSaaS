@@ -8,6 +8,12 @@ const resumeSchema = new mongoose.Schema(
       required: true,
     },
 
+    title: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     fullName: {
       type: String,
       required: true,

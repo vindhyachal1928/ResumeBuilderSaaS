@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import Template1 from "../components/Template1";
 import Template2 from "../components/Template2";
+import API_URL from "../config/api";
 
 function ResumePreview() {
   const { id } = useParams();
@@ -26,7 +27,7 @@ function ResumePreview() {
         }
 
         const response = await fetch(
-          `http://localhost:5000/api/resumes/${id}`,
+          `${API_URL}/api/resumes/${id}`,
           {
             method: "GET",
             headers: {
@@ -124,6 +125,10 @@ function ResumePreview() {
     return <Template1 resume={resume} />;
   };
 
+  const handleDownloadResume = () => {
+    window.print();
+  };
+
   // =========================================================
   // PAGE
   // =========================================================
@@ -175,10 +180,10 @@ function ResumePreview() {
               Edit Resume
             </button>
 
-            {/* PRINT */}
+            {/* DOWNLOAD */}
 
             <button
-              onClick={() => window.print()}
+              onClick={handleDownloadResume}
               className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
             >
               Print / Save PDF

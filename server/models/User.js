@@ -28,6 +28,30 @@ const userSchema = new mongoose.Schema(
         "Password must contain at least 8 characters, 1 uppercase, 1 lowercase, 1 number, and 1 special character (@#$%!).",
       ],
     },
+
+    // ==============================
+    // PASSWORD RESET FIELDS
+    // ==============================
+
+    resetOtpHash: {
+      type: String,
+      default: null,
+    },
+
+    resetOtpExpires: {
+      type: Date,
+      default: null,
+    },
+
+    resetTokenHash: {
+      type: String,
+      default: null,
+    },
+
+    resetTokenExpires: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
